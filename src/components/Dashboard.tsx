@@ -72,7 +72,7 @@ const Dashboard: React.FC<DashboardProps> = ({ performance, studentFitScore }) =
               return (
                 <div key={stat.level}>
                   <div className="flex justify-between items-center mb-1">
-                    <span className="text-sm font-medium text-gray-700">{stat.level}</span>
+                    <span className="text-sm font-medium text-gray-700 capitalize">{stat.level}</span>
                     <span className="text-sm text-gray-600">{stat.correct}/{stat.total} ({accuracy.toFixed(0)}%)</span>
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-2"><div className={`h-2 rounded-full bg-${stat.color}-500`} style={{ width: `${accuracy}%` }}/></div>

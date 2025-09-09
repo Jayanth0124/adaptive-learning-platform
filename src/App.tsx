@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Question, QuizAttempt, StudentPerformance, AdaptiveSettings, User, AuthState } from './types';
 import { AdaptiveEngine } from './services/adaptiveEngine';
 import { AuthService } from './services/authService';
-import { PerformanceService, QuizCompletion } from './services/performanceService';
+import { PerformanceService } from './services/performanceService';
 import { QuizService } from './services/quizService';
 import { SettingsService } from './services/settingsService';
 import { Notification, NotificationService } from './services/notificationService';
@@ -16,14 +16,13 @@ import AdminDashboard from './components/AdminDashboard';
 import StudentHome from './components/StudentHome';
 import TeacherDashboard from './components/TeacherDashboard';
 
-// Helper function to determine the correct initial view on page load/refresh
 const getInitialView = (auth: AuthState): string => {
     if (auth.isAuthenticated) {
         if (AuthService.isAdmin(auth)) return 'admin-dashboard';
-        if (AuthService.isTeacher(auth)) return 'teacher-dashboard';
+        if (AuthService.isTeacher(auth)) return 'teacher-analytics'; // Default view for teachers
         if (AuthService.isStudent(auth)) return 'home';
     }
-    return 'login'; // Default for logged-out users
+    return 'login';
 };
 
 function App() {
@@ -40,7 +39,6 @@ function App() {
 
   const adaptiveEngine = new AdaptiveEngine();
 
-  // This single useEffect handles all data fetching when the app loads or auth state changes.
   useEffect(() => {
     const fetchInitialData = async () => {
         const appSettings = await SettingsService.getSettings();
@@ -49,8 +47,6 @@ function App() {
         if (authState.isAuthenticated && authState.user) {
             const usersData = await AuthService.getUsers();
             setUsers(usersData);
-
-            // Fetch unread notifications for the logged-in user
             const unread = await NotificationService.getUnreadNotifications(authState.user.id);
             setUnreadNotifications(unread);
 
@@ -65,11 +61,9 @@ function App() {
             }
         }
     };
-    
     fetchInitialData();
   }, [authState]);
   
-  // This useEffect calculates the student fit score whenever performance or settings change.
   useEffect(() => {
     if (performance && settings && performance.totalQuestions >= settings.minQuestionsBeforeAdaptation) {
       const fitScore = adaptiveEngine.calculateStudentFitScore(performance);
@@ -78,6 +72,16 @@ function App() {
       setStudentFitScore(0);
     }
   }, [performance, settings]);
+
+  useEffect(() => {
+    const generateQuizForView = async () => {
+        if (currentView === 'quiz' && performance && settings) {
+            const quizQuestions = await QuizService.generateQuizQuestions(performance, settings);
+            setCurrentQuiz(quizQuestions);
+        }
+    };
+    generateQuizForView();
+  }, [currentView, performance, settings]);
 
   const handleLogin = async (newAuthState: AuthState) => {
     setCurrentView(getInitialView(newAuthState));
@@ -127,17 +131,10 @@ function App() {
     setSettings(prev => prev ? {...prev, ...newSettings} : null);
   };
 
-  const generateNewQuiz = async () => {
-    if (!performance || !settings) return;
-    const quizQuestions = await QuizService.generateQuizQuestions(performance, settings);
-    setCurrentQuiz(quizQuestions);
-  };
-
   const handleQuizComplete = async (attempts: QuizAttempt[]) => {
     if (!authState.user || !performance) return;
     
     const updatedPerformance = adaptiveEngine.updatePerformance(performance, attempts, currentQuiz);
-    updatedPerformance.hasCompletedQuiz = true;
     
     await PerformanceService.updatePerformance(authState.user.id, updatedPerformance);
     await PerformanceService.logQuizCompletion(authState.user.id, authState.user.name, updatedPerformance);
@@ -145,15 +142,13 @@ function App() {
     setCurrentView('dashboard');
   };
 
-  const handleViewChange = async (view: string) => {
-    if (view === 'quiz') await generateNewQuiz();
+  const handleViewChange = (view: string) => {
     setCurrentView(view);
   };
 
   const handleMarkAsRead = async (notificationIds: string[]) => {
       if (authState.user) {
           await NotificationService.markNotificationsAsRead(notificationIds, authState.user.id);
-          // Optimistically update the UI for instant feedback
           setUnreadNotifications([]);
       }
   };
@@ -164,7 +159,7 @@ function App() {
   }
   
   if (!settings) {
-    return <div className="min-h-screen flex items-center justify-center">Loading settings...</div>;
+    return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
   }
 
   const isAdmin = AuthService.isAdmin(authState);
@@ -172,7 +167,7 @@ function App() {
   const isTeacher = AuthService.isTeacher(authState);
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 flex flex-col">
       <Navigation 
         currentView={currentView} 
         onViewChange={handleViewChange}
@@ -182,8 +177,8 @@ function App() {
         onMarkAsRead={handleMarkAsRead}
       />
       
-      <main className={isAdmin ? '' : 'p-6'}>
-        {isAdmin && authState.user && (
+      <div className="flex-1">
+        {isAdmin && authState.user ? (
             <AdminDashboard 
                 currentUser={authState.user}
                 users={users} 
@@ -193,32 +188,32 @@ function App() {
                 settings={settings}
                 onUpdateSettings={handleUpdateSettings}
             />
+        ) : (
+            <main className="p-4 md:p-6">
+                {isTeacher && authState.user && (
+                  <TeacherDashboard
+                    currentUser={authState.user}
+                    users={users}
+                    allStudentPerformances={allStudentPerformances}
+                    currentView={currentView}
+                  />
+                )}
+                {isStudent && currentView === 'home' && (
+                  <StudentHome 
+                    onStartQuiz={() => handleViewChange('quiz')}
+                    onViewDashboard={() => handleViewChange('dashboard')}
+                    performance={performance}
+                  />
+                )}
+                {isStudent && currentView === 'quiz' && performance && (
+                  <QuizInterface questions={currentQuiz} onQuizComplete={handleQuizComplete} performance={performance} />
+                )}
+                {isStudent && currentView === 'dashboard' && performance && (
+                  <Dashboard performance={performance} studentFitScore={studentFitScore} />
+                )}
+            </main>
         )}
-
-        {isTeacher && authState.user && (
-          <TeacherDashboard
-            currentUser={authState.user}
-            users={users}
-            allStudentPerformances={allStudentPerformances}
-          />
-        )}
-
-        {isStudent && currentView === 'home' && (
-          <StudentHome 
-            onStartQuiz={() => handleViewChange('quiz')}
-            onViewDashboard={() => handleViewChange('dashboard')}
-            performance={performance}
-          />
-        )}
-        
-        {isStudent && currentView === 'quiz' && performance && (
-          <QuizInterface questions={currentQuiz} onQuizComplete={handleQuizComplete} performance={performance} />
-        )}
-        
-        {isStudent && currentView === 'dashboard' && performance && (
-          <Dashboard performance={performance} studentFitScore={studentFitScore} />
-        )}
-      </main>
+      </div>
     </div>
   );
 }

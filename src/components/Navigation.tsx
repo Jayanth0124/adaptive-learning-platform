@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { BookOpen, BarChart3, LogOut, Bell, CheckCircle, Menu, X } from 'lucide-react';
+import { BookOpen, BarChart3, LogOut, Bell, CheckCircle, Menu, X, Users, Settings } from 'lucide-react';
 import { AuthState } from '../types';
 import { AuthService } from '../services/authService';
 import { Notification } from '../services/notificationService';
@@ -19,6 +19,7 @@ const Navigation: React.FC<NavigationProps> = ({ currentView, onViewChange, auth
   const dropdownRef = useRef<HTMLDivElement>(null);
   const isAdmin = AuthService.isAdmin(authState);
   const isTeacher = AuthService.isTeacher(authState);
+  const isStudent = AuthService.isStudent(authState);
   const unreadCount = unreadNotifications.length;
 
   const handleBellClick = () => {
@@ -41,7 +42,11 @@ const Navigation: React.FC<NavigationProps> = ({ currentView, onViewChange, auth
   
   const getNavItems = () => {
     if (isTeacher) {
-      return [{ id: 'teacher-dashboard', label: 'Dashboard', icon: BarChart3 }];
+      return [
+        { id: 'teacher-analytics', label: 'Student Analytics', icon: Users },
+        { id: 'teacher-questions', label: 'Question Mgt', icon: Settings },
+        { id: 'teacher-notifications', label: 'Notifications', icon: Bell },
+      ];
     } else { // Student
       return [
         { id: 'home', label: 'Home', icon: BookOpen },
@@ -64,7 +69,7 @@ const Navigation: React.FC<NavigationProps> = ({ currentView, onViewChange, auth
       </button>
 
       {isDropdownOpen && (
-          <div className="absolute top-12 right-0 w-80 bg-white border rounded-lg shadow-xl z-40">
+          <div className="absolute top-12 right-0 w-80 bg-white border rounded-lg shadow-xl z-50">
               <div className="p-3 font-semibold text-sm border-b">Notifications</div>
               <div className="max-h-80 overflow-y-auto">
                   {unreadNotifications.length > 0 ? (
@@ -127,7 +132,7 @@ const Navigation: React.FC<NavigationProps> = ({ currentView, onViewChange, auth
             {/* --- MOBILE VIEW --- */}
             <div className="md:hidden flex items-center space-x-2">
                 <NotificationBell />
-                {!isAdmin && (
+                {(isStudent || isTeacher) && (
                     <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
                         {isMobileMenuOpen ? <X className="h-6 w-6"/> : <Menu className="h-6 w-6"/>}
                     </button>
@@ -142,11 +147,13 @@ const Navigation: React.FC<NavigationProps> = ({ currentView, onViewChange, auth
         </div>
       </div>
 
-      {/* Mobile Menu Dropdown for Student/Teacher */}
-      {isMobileMenuOpen && !isAdmin && (
+      {/* Mobile Menu Dropdown for Students AND Teachers */}
+      {isMobileMenuOpen && (isStudent || isTeacher) && (
         <div className="md:hidden bg-white border-t">
-            {navItems.map(({ id, label }) => (
-                <a key={id} href="#" onClick={(e) => { e.preventDefault(); onViewChange(id); setIsMobileMenuOpen(false); }} className="block py-3 px-4 text-base font-medium text-gray-600 hover:bg-gray-50">{label}</a>
+            {navItems.map(({ id, label, icon: Icon }) => (
+                <a key={id} href="#" onClick={(e) => { e.preventDefault(); onViewChange(id); setIsMobileMenuOpen(false); }} className="flex items-center py-3 px-4 text-base font-medium text-gray-600 hover:bg-gray-50">
+                   <Icon className="h-5 w-5 mr-3"/>{label}
+                </a>
             ))}
              <div className="py-3 px-4 border-t">
                  <div className="flex items-center justify-between">
