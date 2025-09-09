@@ -44,7 +44,14 @@ export class NotificationService {
     static async getAllNotifications(): Promise<Notification[]> {
         const q = query(this.notificationsCollectionRef, orderBy('createdAt', 'desc'));
         const snapshot = await getDocs(q);
-        return snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id })) as Notification[];
+        return snapshot.docs.map(doc => {
+            const data = doc.data();
+            return {
+                ...data,
+                id: doc.id,
+                createdAt: data.createdAt.toDate(), // FIX: Convert Firestore Timestamp to JS Date
+            } as Notification;
+        });
     }
 
     /**
@@ -53,7 +60,14 @@ export class NotificationService {
     static async getUnreadNotifications(userId: string): Promise<Notification[]> {
         const q = query(this.notificationsCollectionRef, where('isReadBy', 'not-in', [userId]), orderBy('isReadBy'));
         const snapshot = await getDocs(q);
-        return snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id })) as Notification[];
+        return snapshot.docs.map(doc => {
+            const data = doc.data();
+            return {
+                ...data,
+                id: doc.id,
+                createdAt: data.createdAt.toDate(), // FIX: Convert Firestore Timestamp to JS Date
+            } as Notification;
+        });
     }
     
     /**

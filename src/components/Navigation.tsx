@@ -51,6 +51,41 @@ const Navigation: React.FC<NavigationProps> = ({ currentView, onViewChange, auth
   };
   const navItems = getNavItems();
 
+  const NotificationBell = () => (
+    <div className="relative" ref={dropdownRef}>
+      <button onClick={handleBellClick} className="relative p-2 rounded-full hover:bg-gray-100">
+          <Bell className="h-5 w-5 text-gray-600"/>
+          {unreadCount > 0 && (
+              <span className="absolute top-1 right-1 flex h-2.5 w-2.5">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500"></span>
+              </span>
+          )}
+      </button>
+
+      {isDropdownOpen && (
+          <div className="absolute top-12 right-0 w-80 bg-white border rounded-lg shadow-xl z-40">
+              <div className="p-3 font-semibold text-sm border-b">Notifications</div>
+              <div className="max-h-80 overflow-y-auto">
+                  {unreadNotifications.length > 0 ? (
+                      unreadNotifications.map(n => (
+                      <div key={n.id} className="p-3 border-b hover:bg-gray-50">
+                          <p className="text-sm text-gray-800">{n.message}</p>
+                          <p className="text-xs text-gray-500 mt-1">{n.authorName} - {new Date(n.createdAt).toLocaleDateString()}</p>
+                      </div>
+                      ))
+                  ) : (
+                      <div className="p-6 text-center text-sm text-gray-500 flex flex-col items-center">
+                          <CheckCircle className="h-8 w-8 text-green-400 mb-2"/>
+                          You're all caught up!
+                      </div>
+                  )}
+              </div>
+          </div>
+      )}
+    </div>
+  );
+
   return (
     <nav className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-30">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -77,18 +112,8 @@ const Navigation: React.FC<NavigationProps> = ({ currentView, onViewChange, auth
                   ))}
                 </div>
               )}
-              <div className={`relative flex items-center space-x-2 ${!isAdmin ? 'border-l border-gray-200 pl-4' : ''}`} ref={dropdownRef}>
-                <button onClick={handleBellClick} className="relative p-2 rounded-full hover:bg-gray-100">
-                    <Bell className="h-5 w-5 text-gray-600"/>
-                    {unreadCount > 0 && (
-                        <span className="absolute top-1 right-1 block h-2 w-2 rounded-full bg-red-500"/>
-                    )}
-                </button>
-                {isDropdownOpen && (
-                    <div className="absolute top-12 right-0 w-80 bg-white border rounded-lg shadow-lg z-20">
-                        {/* Notification Dropdown JSX */}
-                    </div>
-                )}
+              <div className={`flex items-center space-x-2 ${!isAdmin ? 'border-l border-gray-200 pl-4' : ''}`}>
+                <NotificationBell />
                 <div className="text-sm">
                     <div className="font-medium text-gray-900">{authState.user?.name}</div>
                     <div className="text-gray-500 capitalize">{authState.user?.role}</div>
@@ -100,22 +125,17 @@ const Navigation: React.FC<NavigationProps> = ({ currentView, onViewChange, auth
             </div>
 
             {/* --- MOBILE VIEW --- */}
-            <div className="md:hidden flex items-center">
+            <div className="md:hidden flex items-center space-x-2">
+                <NotificationBell />
                 {!isAdmin && (
                     <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
                         {isMobileMenuOpen ? <X className="h-6 w-6"/> : <Menu className="h-6 w-6"/>}
                     </button>
                 )}
                 {isAdmin && (
-                    <div className="flex items-center space-x-2">
-                         <div className="text-sm text-right">
-                            <div className="font-medium text-gray-900">{authState.user?.name}</div>
-                            <div className="text-gray-500 capitalize">{authState.user?.role}</div>
-                        </div>
-                        <button onClick={onLogout} className="p-2 text-gray-500">
-                           <LogOut className="h-5 w-5"/>
-                        </button>
-                    </div>
+                    <button onClick={onLogout} className="p-2 text-gray-500">
+                       <LogOut className="h-5 w-5"/>
+                    </button>
                 )}
             </div>
           </div>

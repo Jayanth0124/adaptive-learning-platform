@@ -23,7 +23,7 @@ export class PerformanceService {
       return docSnap.data() as StudentPerformance;
     } else {
       return {
-        id: studentId, totalQuestions: 0, correctAnswers: 0, averageTime: 0, hasCompletedQuiz: false,
+        id: studentId, totalQuestions: 0, correctAnswers: 0, averageTime: 0,
         difficultyDistribution: { easy: { correct: 0, total: 0 }, medium: { correct: 0, total: 0 }, hard: { correct: 0, total: 0 } },
         categoryPerformance: {}, lastUpdated: new Date()
       };
@@ -35,9 +35,6 @@ export class PerformanceService {
     await setDoc(docRef, performanceData);
   }
   
-  /**
-   * Logs a new quiz completion event to Firestore.
-   */
   static async logQuizCompletion(studentId: string, studentName: string, performance: StudentPerformance): Promise<void> {
     const score = performance.totalQuestions > 0 ? (performance.correctAnswers / performance.totalQuestions) * 100 : 0;
     const completionData: QuizCompletion = {
@@ -50,9 +47,6 @@ export class PerformanceService {
     await addDoc(this.completionsCollectionRef, completionData);
   }
 
-  /**
-   * Fetches the 5 most recently completed quizzes.
-   */
   static async getRecentCompletions(): Promise<QuizCompletion[]> {
       const q = query(this.completionsCollectionRef, orderBy('completedAt', 'desc'), limit(5));
       const snapshot = await getDocs(q);
@@ -62,7 +56,6 @@ export class PerformanceService {
   static async getAllStudentPerformances(users: User[]): Promise<(StudentPerformance & { studentName: string })[]> {
     const allPerformances: (StudentPerformance & { studentName: string })[] = [];
     const students = users.filter(u => u.role === 'student');
-    const studentNameMap = new Map(students.map(s => [s.id, s.name]));
     const snapshot = await getDocs(this.performancesCollectionRef);
     const performancesMap = new Map(snapshot.docs.map(doc => [doc.id, doc.data() as StudentPerformance]));
 
@@ -72,7 +65,7 @@ export class PerformanceService {
             allPerformances.push({ ...performanceData, studentName: student.name });
         } else {
             allPerformances.push({
-                id: student.id, studentName: student.name, totalQuestions: 0, correctAnswers: 0, averageTime: 0, hasCompletedQuiz: false,
+                id: student.id, studentName: student.name, totalQuestions: 0, correctAnswers: 0, averageTime: 0,
                 difficultyDistribution: { easy: { correct: 0, total: 0 }, medium: { correct: 0, total: 0 }, hard: { correct: 0, total: 0 } },
                 categoryPerformance: {}, lastUpdated: new Date()
             });

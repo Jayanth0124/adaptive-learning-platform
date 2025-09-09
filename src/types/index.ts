@@ -24,7 +24,6 @@ export interface StudentPerformance {
   totalQuestions: number;
   correctAnswers: number;
   averageTime: number;
-  hasCompletedQuiz?: boolean;
   difficultyDistribution: {
     easy: { correct: number; total: number };
     medium: { correct: number; total: number };
@@ -49,7 +48,7 @@ export interface User {
   password: string;
   role: 'student' | 'admin' | 'teacher';
   name: string;
-  createdAt?: Date; // Added for tracking recent users
+  createdAt?: Date;
 }
 
 export interface AuthState {
