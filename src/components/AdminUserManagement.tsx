@@ -14,9 +14,7 @@ const AdminUserManagement: React.FC<AdminUserManagementProps> = ({ users, onDele
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-
   const [userToProcess, setUserToProcess] = useState<User | null>(null);
-  
   const [newUserData, setNewUserData] = useState({ name: '', username: '', password: '', role: 'student' as 'student' | 'teacher' });
   const [error, setError] = useState('');
 

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { User, AdaptiveSettings } from '../types';
-import { LayoutDashboard, Users, Settings, Bell } from 'lucide-react';
+import { LayoutDashboard, Users, Settings, Bell, Menu, X } from 'lucide-react';
 import AdminUserManagement from './AdminUserManagement';
 import AdminSettings from './AdminSettings';
 import AdminDashboardOverview from './AdminDashboardOverview';
@@ -22,6 +22,7 @@ interface AdminDashboardProps {
 
 const AdminDashboard: React.FC<AdminDashboardProps> = (props) => {
     const [activeView, setActiveView] = useState('overview');
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [stats, setStats] = useState({ userCount: 0, studentCount: 0, questionCount: 0 });
     const [recentUsers, setRecentUsers] = useState<User[]>([]);
     const [recentCompletions, setRecentCompletions] = useState<QuizCompletion[]>([]);
@@ -58,11 +59,27 @@ const AdminDashboard: React.FC<AdminDashboardProps> = (props) => {
     ];
 
     return (
-        <div className="flex min-h-screen bg-gray-100">
-            <aside className="w-64 bg-white border-r">
+        // This main container now defines the full height below the nav bar
+        <div className="flex h-[calc(100vh-4rem)] bg-gray-100">
+            {/* Overlay for mobile when sidebar is open */}
+            {isSidebarOpen && (
+                <div 
+                    className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
+                    onClick={() => setIsSidebarOpen(false)}
+                ></div>
+            )}
+
+            {/* Sidebar */}
+            <aside className={`fixed lg:relative inset-y-0 left-0 bg-white border-r w-64 transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 transition-transform duration-300 ease-in-out z-50`}>
+                <div className="p-4 flex justify-between items-center lg:justify-start border-b h-16">
+                    <h2 className="text-xl font-bold text-gray-800">Admin Panel</h2>
+                    <button className="lg:hidden p-1 text-gray-500 hover:text-gray-800" onClick={() => setIsSidebarOpen(false)}>
+                        <X className="h-6 w-6"/>
+                    </button>
+                </div>
                 <nav className="mt-4">
                     {navItems.map(item => (
-                        <button key={item.id} onClick={() => setActiveView(item.id)}
+                        <button key={item.id} onClick={() => { setActiveView(item.id); setIsSidebarOpen(false); }}
                             className={`w-full flex items-center px-4 py-3 text-left transition-colors ${
                                 activeView === item.id 
                                 ? 'bg-blue-50 text-blue-600 border-r-4 border-blue-500' 
@@ -74,12 +91,27 @@ const AdminDashboard: React.FC<AdminDashboardProps> = (props) => {
                     ))}
                 </nav>
             </aside>
-            <main className="flex-1 p-8">
-                {activeView === 'overview' && <AdminDashboardOverview stats={stats} recentUsers={recentUsers} recentCompletions={recentCompletions} />}
-                {activeView === 'users' && <AdminUserManagement {...props} />}
-                {activeView === 'notifications' && <NotificationManager currentUser={props.currentUser} />}
-                {activeView === 'settings' && <AdminSettings settings={props.settings} onUpdateSettings={props.onUpdateSettings} />}
-            </main>
+
+            {/* This div is the main content area that will handle its own scrolling */}
+            <div className="flex-1 flex flex-col h-full">
+                 {/* Mobile Header for Sidebar Toggle */}
+                 <header className="lg:hidden bg-white border-b p-4 flex items-center sticky top-0 z-20">
+                    <button onClick={() => setIsSidebarOpen(true)}>
+                        <Menu className="h-6 w-6 text-gray-600"/>
+                    </button>
+                    <h2 className="ml-4 font-semibold text-gray-800">
+                        {navItems.find(item => item.id === activeView)?.label}
+                    </h2>
+                 </header>
+
+                {/* Main Content - This part now scrolls independently */}
+                <main className="flex-1 overflow-y-auto p-4 md:p-8">
+                    {activeView === 'overview' && <AdminDashboardOverview stats={stats} recentUsers={recentUsers} recentCompletions={recentCompletions} />}
+                    {activeView === 'users' && <AdminUserManagement {...props} />}
+                    {activeView === 'notifications' && <NotificationManager currentUser={props.currentUser} />}
+                    {activeView === 'settings' && <AdminSettings settings={props.settings} onUpdateSettings={props.onUpdateSettings} />}
+                </main>
+            </div>
         </div>
     );
 };
