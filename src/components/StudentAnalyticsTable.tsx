@@ -8,9 +8,9 @@ interface StudentAnalyticsTableProps {
 
 const StudentAnalyticsTable: React.FC<StudentAnalyticsTableProps> = ({ performances }) => {
   return (
-    <div className="max-w-7xl mx-auto">
+    <div>
        <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2 flex items-center">
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2 flex items-center">
             <Users className="h-8 w-8 mr-3 text-blue-600" />
             Student Performance Analytics
         </h1>
@@ -18,6 +18,7 @@ const StudentAnalyticsTable: React.FC<StudentAnalyticsTableProps> = ({ performan
       </div>
 
       <div className="bg-white rounded-lg shadow-sm border overflow-hidden">
+        {/* This div makes the table scrollable on small screens */}
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">

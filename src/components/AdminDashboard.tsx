@@ -59,17 +59,13 @@ const AdminDashboard: React.FC<AdminDashboardProps> = (props) => {
     ];
 
     return (
-        // This main container now defines the full height below the nav bar
         <div className="flex h-[calc(100vh-4rem)] bg-gray-100">
-            {/* Overlay for mobile when sidebar is open */}
             {isSidebarOpen && (
                 <div 
                     className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
                     onClick={() => setIsSidebarOpen(false)}
                 ></div>
             )}
-
-            {/* Sidebar */}
             <aside className={`fixed lg:relative inset-y-0 left-0 bg-white border-r w-64 transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 transition-transform duration-300 ease-in-out z-50`}>
                 <div className="p-4 flex justify-between items-center lg:justify-start border-b h-16">
                     <h2 className="text-xl font-bold text-gray-800">Admin Panel</h2>
@@ -91,10 +87,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = (props) => {
                     ))}
                 </nav>
             </aside>
-
-            {/* This div is the main content area that will handle its own scrolling */}
             <div className="flex-1 flex flex-col h-full">
-                 {/* Mobile Header for Sidebar Toggle */}
                  <header className="lg:hidden bg-white border-b p-4 flex items-center sticky top-0 z-20">
                     <button onClick={() => setIsSidebarOpen(true)}>
                         <Menu className="h-6 w-6 text-gray-600"/>
@@ -103,8 +96,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = (props) => {
                         {navItems.find(item => item.id === activeView)?.label}
                     </h2>
                  </header>
-
-                {/* Main Content - This part now scrolls independently */}
                 <main className="flex-1 overflow-y-auto p-4 md:p-8">
                     {activeView === 'overview' && <AdminDashboardOverview stats={stats} recentUsers={recentUsers} recentCompletions={recentCompletions} />}
                     {activeView === 'users' && <AdminUserManagement {...props} />}
