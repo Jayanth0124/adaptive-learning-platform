@@ -67,8 +67,8 @@ Before running this application, ensure you have the following installed:
 
 1. **Clone the repository**:
    ```bash
-   git clone <repository-url>
-   cd <project-directory>
+   git clone <https://github.com/Jayanth0124/adaptive-learning-platform.git>
+   cd <adaptive-learning-platform>
    ```
 
 2. **Install dependencies**:
