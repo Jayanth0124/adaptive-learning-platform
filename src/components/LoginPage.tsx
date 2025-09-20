@@ -61,14 +61,14 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onNavigateToSignup, sett
                 </button>
               </div>
             </div>
-            
+
             {error && (
               <div className="flex items-center p-3 bg-red-50 border rounded-lg">
                 <AlertCircle className="h-4 w-4 text-red-500 mr-2" />
                 <span className="text-sm text-red-700">{error}</span>
               </div>
             )}
-            
+
             <button type="submit" disabled={isLoading} className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition-colors disabled:bg-blue-400">
               {isLoading ? 'Signing In...' : 'Sign In'}
             </button>

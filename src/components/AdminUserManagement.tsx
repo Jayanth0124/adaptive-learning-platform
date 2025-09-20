@@ -1,3 +1,4 @@
+// src/components/AdminUserManagement.tsx
 import React, { useState, useMemo } from 'react';
 import { User } from '../types';
 import { Users, Shield, UserCheck, Trash2, Plus, X, Edit, Search } from 'lucide-react';
@@ -6,7 +7,7 @@ import ConfirmationModal from './ConfirmationModal';
 interface AdminUserManagementProps {
   users: User[];
   onDeleteUser: (userId: string) => void;
-  onCreateUser: (name: string, username: string, pass: string, role: 'student' | 'teacher') => Promise<boolean>;
+  onCreateUser: (name: string, username: string, email: string, pass: string, role: 'student' | 'teacher') => Promise<boolean>;
   onUpdateUserRole: (userId: string, newRole: 'student' | 'teacher') => Promise<void>;
 }
 
@@ -29,7 +30,7 @@ const AdminUserManagement: React.FC<AdminUserManagementProps> = ({ users, onDele
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [userToProcess, setUserToProcess] = useState<User | null>(null);
-  const [newUserData, setNewUserData] = useState({ name: '', username: '', password: '', role: 'student' as 'student' | 'teacher' });
+  const [newUserData, setNewUserData] = useState({ name: '', username: '', email: '', password: '', role: 'student' as 'student' | 'teacher' });
   const [error, setError] = useState('');
 
   const [searchTerm, setSearchTerm] = useState('');
@@ -44,7 +45,7 @@ const AdminUserManagement: React.FC<AdminUserManagementProps> = ({ users, onDele
                               user.username.toLowerCase().includes(searchTerm.toLowerCase());
         return matchesRole && matchesSearch;
       })
-      .sort((a, b) => new Date(b.createdAt!).getTime() - new Date(a.createdAt!).getTime());
+      .sort((a, b) => (b.createdAt && a.createdAt) ? new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime() : 0);
   }, [users, searchTerm, roleFilter]);
 
   const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -85,15 +86,15 @@ const AdminUserManagement: React.FC<AdminUserManagementProps> = ({ users, onDele
   const handleCreateUserSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    const success = await onCreateUser(newUserData.name, newUserData.username, newUserData.password, newUserData.role);
+    const success = await onCreateUser(newUserData.name, newUserData.username, newUserData.email, newUserData.password, newUserData.role);
     if (success) {
         setIsCreateModalOpen(false);
-        setNewUserData({ name: '', username: '', password: '', role: 'student' });
+        setNewUserData({ name: '', username: '', email: '', password: '', role: 'student' });
     } else {
-        setError('Username already exists. Please choose another.');
+        setError('Username or email already exists. Please choose another.');
     }
   };
-  
+
   const handleEditRoleSubmit = async (e: React.FormEvent) => {
       e.preventDefault();
       if (userToProcess) {
@@ -134,6 +135,10 @@ const AdminUserManagement: React.FC<AdminUserManagementProps> = ({ users, onDele
                         <div>
                             <label className="block text-sm font-medium text-gray-700">Username</label>
                             <input type="text" required value={newUserData.username} onChange={e => setNewUserData({...newUserData, username: e.target.value})} className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md" />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700">Email Address</label>
+                            <input type="email" required value={newUserData.email} onChange={e => setNewUserData({...newUserData, email: e.target.value})} className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md" />
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-gray-700">Password</label>
@@ -188,7 +193,7 @@ const AdminUserManagement: React.FC<AdminUserManagementProps> = ({ users, onDele
           <h1 className="text-3xl font-bold text-gray-900">User Management</h1>
           <p className="text-gray-600 mt-1">View, create, edit, and delete users.</p>
         </div>
-        
+
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
             <StatCard title="Total Users" value={users.length} icon={Users} />
             <StatCard title="Students" value={studentCount} icon={UserCheck} />

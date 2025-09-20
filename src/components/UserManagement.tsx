@@ -1,3 +1,4 @@
+// src/components/UserManagement.tsx
 import React, { useState } from 'react';
 import { User } from '../types';
 import { Users, Shield, UserCheck, Trash2, Plus, X } from 'lucide-react';
@@ -6,15 +7,15 @@ import ConfirmationModal from './ConfirmationModal';
 interface UserManagementProps {
   users: User[];
   onDeleteUser: (userId: string) => void;
-  onCreateUser: (name: string, username: string, pass: string, role: 'student' | 'teacher') => Promise<boolean>;
+  onCreateUser: (name: string, username: string, email: string, pass: string, role: 'student' | 'teacher') => Promise<boolean>;
 }
 
 const UserManagement: React.FC<UserManagementProps> = ({ users, onDeleteUser, onCreateUser }) => {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState<User | null>(null);
-  
-  const [newUserData, setNewUserData] = useState({ name: '', username: '', password: '', role: 'student' as 'student' | 'teacher' });
+
+  const [newUserData, setNewUserData] = useState({ name: '', username: '', email: '', password: '', role: 'student' as 'student' | 'teacher' });
   const [error, setError] = useState('');
 
   const openDeleteModal = (user: User) => {
@@ -33,12 +34,12 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, onDeleteUser, on
   const handleCreateUserSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    const success = await onCreateUser(newUserData.name, newUserData.username, newUserData.password, newUserData.role);
+    const success = await onCreateUser(newUserData.name, newUserData.username, newUserData.email, newUserData.password, newUserData.role);
     if (success) {
         setIsCreateModalOpen(false);
-        setNewUserData({ name: '', username: '', password: '', role: 'student' });
+        setNewUserData({ name: '', username: '', email: '', password: '', role: 'student' });
     } else {
-        setError('Username already exists. Please choose another.');
+        setError('Username or email already exists. Please choose another.');
     }
   };
 
@@ -72,6 +73,10 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, onDeleteUser, on
                         <div>
                             <label className="block text-sm font-medium text-gray-700">Username</label>
                             <input type="text" required value={newUserData.username} onChange={e => setNewUserData({...newUserData, username: e.target.value})} className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700">Email Address</label>
+                            <input type="email" required value={newUserData.email} onChange={e => setNewUserData({...newUserData, email: e.target.value})} className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-gray-700">Password</label>

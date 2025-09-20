@@ -1,3 +1,4 @@
+// src/services/aiQuestionService.ts
 import { Question } from '../types';
 
 // Read the OpenRouter API key from environment variables
@@ -18,9 +19,9 @@ export class AIQuestionService {
     const prompt = `
       Generate ${numQuestions} multiple-choice questions about "${topic}".
       The difficulty level for all questions should be "${difficulty}".
-      Each question should be in the "${category}" category.
+      Each question must be in the "${category}" category.
 
-      Provide the output in a valid JSON array format. Each object in the array should have the following structure:
+      Provide the output in a valid JSON object format. The JSON object should have a single key named "questions", which contains an array of question objects. Each object in the array should have the following structure:
       {
         "text": "The question text.",
         "options": ["Option A", "Option B", "Option C", "Option D"],
@@ -31,7 +32,7 @@ export class AIQuestionService {
         "explanation": "A brief explanation of the correct answer."
       }
 
-      Do not include any text or formatting outside of the JSON array.
+      Do not include any text or formatting outside of the main JSON object.
     `;
 
     try {
@@ -44,11 +45,11 @@ export class AIQuestionService {
         body: JSON.stringify({
           model: 'openai/gpt-4o',
           messages: [
-            { role: 'system', content: 'You are an expert quiz question creator. Your responses must be in valid, clean JSON format.' },
+            { role: 'system', content: 'You are an expert quiz question creator. Your responses must be a single, valid JSON object with a "questions" key containing an array of questions.' },
             { role: 'user', content: prompt },
           ],
           response_format: { type: "json_object" },
-          max_tokens: 2048, // **FIX: Added a token limit to stay within the free tier**
+          max_tokens: 2048,
         }),
       });
 
@@ -60,16 +61,29 @@ export class AIQuestionService {
 
       const data = await response.json();
       const content = data.choices[0].message.content;
-      
+
+      // --- Robust Parsing Logic ---
       const jsonResponse = JSON.parse(content);
-      
-      const questionsArray = Array.isArray(jsonResponse) 
-        ? jsonResponse 
-        : Object.values(jsonResponse)[0];
+
+      if (typeof jsonResponse !== 'object' || jsonResponse === null) {
+        throw new Error("AI response is not a valid object.");
+      }
+
+      // Find the key that holds the array of questions (e.g., "questions", "results")
+      const questionsArray = Object.values(jsonResponse).find(value => Array.isArray(value));
+
+      if (!questionsArray) {
+          throw new Error("AI response does not contain a valid array of questions.");
+      }
+
+      // Validate that each item in the array is an object
+      if (!questionsArray.every(q => typeof q === 'object' && q !== null)) {
+          throw new Error("Not all items in the AI response array are valid question objects.");
+      }
 
       return questionsArray as Omit<Question, 'id'>[];
     } catch (error) {
-      console.error('Error generating questions with AI:', error);
+      console.error('Error generating or parsing questions with AI:', error);
       throw error;
     }
   }

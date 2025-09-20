@@ -1,3 +1,4 @@
+// src/components/TeacherQuestionManager.tsx
 import React, { useState, useEffect } from 'react';
 import { Question } from '../types';
 import { db } from '../firebase';
@@ -8,7 +9,7 @@ import { AIQuestionService } from '../services/aiQuestionService';
 // A reusable form for adding/editing questions
 const QuestionForm: React.FC<{
   question?: Question | null;
-  onSave: (question: Question | Omit<Question, 'id'>) => Promise<void>; 
+  onSave: (question: Question | Omit<Question, 'id'>) => Promise<void>;
   onCancel: () => void;
 }> = ({ question, onSave, onCancel }) => {
     const [formData, setFormData] = useState({
@@ -113,7 +114,7 @@ const TeacherQuestionManager: React.FC = () => {
     useEffect(() => {
         fetchQuestions();
     }, []);
-    
+
     const handleGenerateWithAI = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsGenerating(true);
@@ -127,6 +128,7 @@ const TeacherQuestionManager: React.FC = () => {
                 aiCategory
             );
 
+            // This loop is now safe because the service guarantees an array of objects
             for (const q of newQuestions) {
                 await addDoc(questionsCollectionRef, q);
             }
@@ -134,8 +136,8 @@ const TeacherQuestionManager: React.FC = () => {
             await fetchQuestions(); // Refresh the list
             setAiTopic('');
             setAiCategory('');
-        } catch (error) {
-            setAiError('Failed to generate questions. Please check the API key and try again.');
+        } catch (error: any) {
+            setAiError(`Failed to generate questions. The AI may have returned an invalid format. Please try again. (Error: ${error.message})`);
             console.error(error);
         } finally {
             setIsGenerating(false);
@@ -176,7 +178,7 @@ const TeacherQuestionManager: React.FC = () => {
                     <Plus className="h-5 w-5 mr-2" />Add Question
                 </button>
             </div>
-            
+
             {/* AI Generation Form */}
             <div className="bg-white p-6 rounded-lg shadow-sm border mb-8">
                 <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center">
@@ -208,7 +210,7 @@ const TeacherQuestionManager: React.FC = () => {
                             </select>
                         </div>
                     </div>
-                    {aiError && <p className="text-sm text-red-600">{aiError}</p>}
+                    {aiError && <p className="text-sm text-red-600 bg-red-50 p-3 rounded-md">{aiError}</p>}
                     <button type="submit" disabled={isGenerating} className="bg-purple-600 text-white px-6 py-2 rounded-lg hover:bg-purple-700 disabled:bg-purple-400 flex items-center">
                         {isGenerating ? 'Generating...' : 'Generate Questions'}
                     </button>

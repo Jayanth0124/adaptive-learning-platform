@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { User, Lock, BookOpen, Brain, Lightbulb, Trophy } from 'lucide-react';
+import { User, Lock, BookOpen, Brain, Lightbulb, Trophy, Mail } from 'lucide-react';
 import { AdaptiveSettings } from '../types';
 
 interface SignupPageProps {
-  onSignup: (username: string, name: string, pass: string) => Promise<void>;
+  onSignup: (email: string, password: string, name: string, username: string) => Promise<void>;
   onBackToLogin: () => void;
   settings: AdaptiveSettings;
 }
@@ -11,13 +11,14 @@ interface SignupPageProps {
 const SignupPage: React.FC<SignupPageProps> = ({ onSignup, onBackToLogin, settings }) => {
   const [username, setUsername] = useState('');
   const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    await onSignup(username, name, password);
+    await onSignup(email, password, name, username);
     setIsLoading(false);
   };
 
@@ -38,15 +39,31 @@ const SignupPage: React.FC<SignupPageProps> = ({ onSignup, onBackToLogin, settin
             <form onSubmit={handleSubmit} className="space-y-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700">Full Name</label>
-                <input type="text" value={name} onChange={(e) => setName(e.target.value)} className="mt-1 w-full p-3 border rounded-lg" required />
+                <div className="relative mt-1">
+                    <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <input type="text" value={name} onChange={(e) => setName(e.target.value)} className="w-full pl-10 pr-4 py-3 border rounded-lg" required />
+                </div>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700">Username</label>
-                <input type="text" value={username} onChange={(e) => setUsername(e.target.value)} className="mt-1 w-full p-3 border rounded-lg" required />
+                <div className="relative mt-1">
+                    <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <input type="text" value={username} onChange={(e) => setUsername(e.target.value)} className="w-full pl-10 pr-4 py-3 border rounded-lg" required />
+                </div>
+              </div>
+               <div>
+                <label className="block text-sm font-medium text-gray-700">Email Address</label>
+                <div className="relative mt-1">
+                    <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full pl-10 pr-4 py-3 border rounded-lg" required />
+                </div>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700">Password</label>
-                <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="mt-1 w-full p-3 border rounded-lg" required />
+                <div className="relative mt-1">
+                    <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="w-full pl-10 pr-4 py-3 border rounded-lg" required />
+                </div>
               </div>
               <button type="submit" disabled={isLoading} className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition-colors disabled:bg-blue-400">
                 {isLoading ? 'Creating Account...' : 'Sign Up'}
@@ -58,7 +75,7 @@ const SignupPage: React.FC<SignupPageProps> = ({ onSignup, onBackToLogin, settin
               <p className="text-gray-600 mt-2">Please contact an administrator to create an account.</p>
             </div>
           )}
-          
+
           <p className="text-center text-sm text-gray-600 mt-6">
             Already have an account?{' '}
             <button onClick={onBackToLogin} className="font-medium text-blue-600 hover:underline">
@@ -66,7 +83,7 @@ const SignupPage: React.FC<SignupPageProps> = ({ onSignup, onBackToLogin, settin
             </button>
           </p>
         </div>
-        
+
         <div className="auth-visual-section">
             <div className="absolute inset-0 z-0">
                 <Brain className="floating-icon" style={{ width: '80px', height: '80px', top: '15%', left: '20%', animationDuration: '8s' }} />
