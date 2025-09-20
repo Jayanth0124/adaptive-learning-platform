@@ -1,3 +1,33 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+.auth-container {
+    @apply min-h-screen flex items-center justify-center p-4;
+    background-color: #ffffff;
+    background-image: url("data:image/svg+xml,%3Csvg width='500' height='500' viewBox='0 0 500 500' xmlns='http://www.w3.org/2000/svg'%3E%3Cdefs%3E%3Cg id='book' fill='none' stroke='%23000000' stroke-width='1'%3E%3Cpath d='M2,2 L10,2 L10,14 L6,12 L2,14 Z'/%3E%3Cpath d='M3,3 L9,3'/%3E%3Cpath d='M3,5 L9,5'/%3E%3Cpath d='M3,7 L7,7'/%3E%3C/g%3E%3Cg id='brain' fill='none' stroke='%23000000' stroke-width='1'%3E%3Cpath d='M13,8 C13,5 11,3 8,3 C5,3 3,5 3,8 C3,11 5,13 8,13 C8,15 6,16 4,16 M13,8 C13,11 15,13 18,13 C21,13 23,11 23,8 C23,5 21,3 18,3 C18,1 20,0 22,0'/%3E%3C/g%3E%3Cg id='quiz' fill='none' stroke='%23000000' stroke-width='1'%3E%3Cpath d='M6,2 C6,0 10,0 10,4 C10,6 8,6 8,8 L8,10 M8,12 L8,14'/%3E%3C/g%3E%3Cg id='bulb' fill='none' stroke='%23000000' stroke-width='1'%3E%3Ccircle cx='8' cy='6' r='4'/%3E%3Cpath d='M6,10 L10,10 L9,14 L7,14 Z'/%3E%3Cpath d='M7,15 L9,15'/%3E%3C/g%3E%3Cg id='ai' fill='none' stroke='%23000000' stroke-width='1'%3E%3Crect x='3' y='3' width='10' height='10' rx='2'/%3E%3Ctext x='8' y='10' font-size='4' text-anchor='middle' fill='%23000'%3EAI%3C/text%3E%3C/g%3E%3C/defs%3E%3Cg fill-opacity='0.05'%3E%3Cuse href='%23book' x='50' y='80' transform='scale(2) rotate(15 58 88)'/%3E%3Cuse href='%23brain' x='350' y='120' transform='scale(1.8) rotate(-10 358 128)'/%3E%3Cuse href='%23quiz' x='150' y='400' transform='scale(2.5) rotate(25 158 408)'/%3E%3Cuse href='%23bulb' x='400' y='350' transform='scale(2)'/%3E%3Cuse href='%23ai' x='220' y='220' transform='scale(2)'/%3E%3Cuse href='%23book' x='450' y='50' transform='scale(1.5)'/%3E%3Cuse href='%23brain' x='80' y='280' transform='scale(1.6)'/%3E%3Cuse href='%23bulb' x='180' y='80' transform='scale(1.5)'/%3E%3Cuse href='%23ai' x='420' y='450' transform='scale(1.8)'/%3E%3C/g%3E%3C/svg%3E");
+}
+
+.auth-card {
+    @apply w-full max-w-4xl bg-white rounded-lg shadow-2xl overflow-hidden flex;
+}
+
+.auth-form-section {
+    @apply w-full lg:w-1/2 p-8 md:p-12;
+}
+
+.auth-visual-section {
+    @apply hidden lg:flex flex-col justify-center items-center text-center p-12 relative w-1/2 bg-gradient-to-br from-blue-600 to-indigo-700 text-white overflow-hidden;
+}
+
+@keyframes float {
+    0% { transform: translateY(0px) rotate(0deg); }
+    50% { transform: translateY(-20px) rotate(5deg); }
+    100% { transform: translateY(0px) rotate(0deg); }
+}
+
+.floating-icon {
+    @apply absolute text-white;
+    animation: float linear infinite;
+    opacity: 0.15;
+}
