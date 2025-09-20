@@ -7,7 +7,6 @@ export interface Question {
   tags: string[];
   category: string;
   explanation?: string;
-  allQuestions?: Question[];
 }
 
 export interface QuizAttempt {
@@ -31,15 +30,17 @@ export interface StudentPerformance {
   };
   categoryPerformance: Record<string, { correct: number; total: number }>;
   lastUpdated: Date;
-  allQuestions?: Question[];
 }
 
 export interface AdaptiveSettings {
   poolSize: number;
+  minQuestionsBeforeAdaptation: number;
+  publicSignupEnabled: boolean; // New
+  appName: string;              // New
+  // Deprecated but kept for type compatibility
   difficultyBalanceRatio: { easy: number; medium: number; hard: number };
   adaptationResponseTime: number;
   studentFitScore: number;
-  minQuestionsBeforeAdaptation: number;
 }
 
 export interface User {

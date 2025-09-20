@@ -15,12 +15,11 @@ import Dashboard from './components/Dashboard';
 import AdminDashboard from './components/AdminDashboard';
 import StudentHome from './components/StudentHome';
 import TeacherDashboard from './components/TeacherDashboard';
-import StudentDetailModal from './components/StudentDetailModal'; // Ensure this is imported if used directly here, though it's likely in a sub-component
 
 const getInitialView = (auth: AuthState): string => {
     if (auth.isAuthenticated) {
         if (AuthService.isAdmin(auth)) return 'admin-dashboard';
-        if (AuthService.isTeacher(auth)) return 'teacher-analytics'; // Default view for teachers
+        if (AuthService.isTeacher(auth)) return 'teacher-analytics';
         if (AuthService.isStudent(auth)) return 'home';
     }
     return 'login';
@@ -37,15 +36,22 @@ function App() {
   const [users, setUsers] = useState<User[]>([]);
   const [allStudentPerformances, setAllStudentPerformances] = useState<(StudentPerformance & { studentName: string })[]>([]);
   const [unreadNotifications, setUnreadNotifications] = useState<Notification[]>([]);
-  const [isQuizLoading, setIsQuizLoading] = useState(false); // To show a loading state
+  const [isQuizLoading, setIsQuizLoading] = useState(false);
 
   const adaptiveEngine = new AdaptiveEngine();
 
+  // Effect to fetch core app settings on initial load
   useEffect(() => {
-    const fetchInitialData = async () => {
+    const fetchSettings = async () => {
         const appSettings = await SettingsService.getSettings();
         setSettings(appSettings);
+    };
+    fetchSettings();
+  }, []);
 
+  // Effect to fetch user-specific data when auth state changes
+  useEffect(() => {
+    const fetchUserData = async () => {
         if (authState.isAuthenticated && authState.user) {
             const usersData = await AuthService.getUsers();
             setUsers(usersData);
@@ -63,7 +69,7 @@ function App() {
             }
         }
     };
-    fetchInitialData();
+    fetchUserData();
   }, [authState]);
   
   useEffect(() => {
@@ -79,17 +85,13 @@ function App() {
     const generateQuizForView = async () => {
         if (currentView === 'quiz' && performance && settings) {
             setIsQuizLoading(true);
-            setCurrentQuiz([]); // Clear previous quiz
+            setCurrentQuiz([]);
             
             let quizQuestions: Question[];
             
-            // If the student has answered enough questions, use the new AI generation
             if (performance.totalQuestions >= settings.minQuestionsBeforeAdaptation) {
-                console.log("Generating adaptive quiz with AI...");
                 quizQuestions = await QuizService.generateAdaptiveQuizWithAI(performance, settings);
             } else {
-                // Otherwise, give them a standard quiz from the database
-                console.log("Generating initial standard quiz...");
                 quizQuestions = await QuizService.generateInitialQuiz(settings);
             }
             
@@ -145,7 +147,8 @@ function App() {
   
   const handleUpdateSettings = async (newSettings: Partial<AdaptiveSettings>) => {
     await SettingsService.updateSettings(newSettings);
-    setSettings(prev => prev ? {...prev, ...newSettings} : null);
+    const updatedSettings = await SettingsService.getSettings();
+    setSettings(updatedSettings);
   };
 
   const handleQuizComplete = async (attempts: QuizAttempt[]) => {
@@ -166,17 +169,20 @@ function App() {
   const handleMarkAsRead = async (notificationIds: string[]) => {
       if (authState.user) {
           await NotificationService.markNotificationsAsRead(notificationIds, authState.user.id);
-          setUnreadNotifications([]);
+          const unread = await NotificationService.getUnreadNotifications(authState.user);
+          setUnreadNotifications(unread);
       }
   };
 
-  if (!authState.isAuthenticated) {
-    if (showSignup) return <SignupPage onSignup={handleSignup} onBackToLogin={() => setShowSignup(false)} />;
-    return <LoginPage onLogin={handleLogin} onNavigateToSignup={() => setShowSignup(true)} />;
-  }
-  
+  // **THE FIX IS HERE**: Show loading until settings are fetched
   if (!settings) {
-    return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+    return <div className="min-h-screen flex items-center justify-center">Loading Application...</div>;
+  }
+
+  // Once settings are loaded, decide which page to show
+  if (!authState.isAuthenticated) {
+    if (showSignup) return <SignupPage onSignup={handleSignup} onBackToLogin={() => setShowSignup(false)} settings={settings} />;
+    return <LoginPage onLogin={handleLogin} onNavigateToSignup={() => setShowSignup(true)} settings={settings} />;
   }
 
   const isAdmin = AuthService.isAdmin(authState);
@@ -192,6 +198,7 @@ function App() {
         onLogout={handleLogout}
         unreadNotifications={unreadNotifications}
         onMarkAsRead={handleMarkAsRead}
+        settings={settings}
       />
       
       <div className="flex-1">
@@ -239,3 +246,4 @@ function App() {
 }
 
 export default App;
+
