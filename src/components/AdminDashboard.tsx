@@ -78,36 +78,50 @@ const AdminDashboard: React.FC<AdminDashboardProps> = (props) => {
         { id: 'notifications', label: 'Notifications', icon: Bell },
         { id: 'settings', label: 'System Settings', icon: Settings },
     ];
+    
+    const SidebarContent = () => (
+        <div className="flex flex-col h-full">
+            <div className="p-4 flex justify-between items-center lg:justify-start border-b h-16 shrink-0">
+                <h2 className="text-xl font-bold text-gray-800">Admin Panel</h2>
+                <button className="lg:hidden p-1 text-gray-500 hover:text-gray-800" onClick={() => setIsSidebarOpen(false)}>
+                    <X className="h-6 w-6"/>
+                </button>
+            </div>
+            <nav className="mt-4 flex-1">
+                {navItems.map(item => (
+                    <button key={item.id} onClick={() => { setActiveView(item.id); setIsSidebarOpen(false); }}
+                        className={`w-full flex items-center px-4 py-3 text-left transition-colors ${
+                            activeView === item.id 
+                            ? 'bg-blue-50 text-blue-600 border-r-4 border-blue-500' 
+                            : 'text-gray-600 hover:bg-gray-50'
+                        }`}>
+                        <item.icon className="h-5 w-5 mr-3" />
+                        {item.label}
+                    </button>
+                ))}
+            </nav>
+        </div>
+    );
+
 
     return (
-        <div className="flex h-[calc(100vh-4rem)] bg-gray-100">
+        <div className="lg:flex h-[calc(100vh-4rem)] bg-gray-100">
+            {/* Mobile Sidebar Overlay */}
             {isSidebarOpen && (
                 <div 
                     className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
                     onClick={() => setIsSidebarOpen(false)}
                 ></div>
             )}
-            <aside className={`fixed lg:relative inset-y-0 left-0 bg-white border-r w-64 transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 transition-transform duration-300 ease-in-out z-50`}>
-                <div className="p-4 flex justify-between items-center lg:justify-start border-b h-16">
-                    <h2 className="text-xl font-bold text-gray-800">Admin Panel</h2>
-                    <button className="lg:hidden p-1 text-gray-500 hover:text-gray-800" onClick={() => setIsSidebarOpen(false)}>
-                        <X className="h-6 w-6"/>
-                    </button>
-                </div>
-                <nav className="mt-4">
-                    {navItems.map(item => (
-                        <button key={item.id} onClick={() => { setActiveView(item.id); setIsSidebarOpen(false); }}
-                            className={`w-full flex items-center px-4 py-3 text-left transition-colors ${
-                                activeView === item.id 
-                                ? 'bg-blue-50 text-blue-600 border-r-4 border-blue-500' 
-                                : 'text-gray-600 hover:bg-gray-50'
-                            }`}>
-                            <item.icon className="h-5 w-5 mr-3" />
-                            {item.label}
-                        </button>
-                    ))}
-                </nav>
+            {/* Mobile Sidebar */}
+            <aside className={`fixed lg:hidden inset-y-0 left-0 bg-white border-r w-64 transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} transition-transform duration-300 ease-in-out z-50`}>
+                <SidebarContent />
             </aside>
+            {/* Desktop Sidebar */}
+             <aside className="hidden lg:block w-64 bg-white border-r shrink-0">
+                <SidebarContent />
+            </aside>
+            
             <div className="flex-1 flex flex-col h-full">
                  <header className="lg:hidden bg-white border-b p-4 flex items-center sticky top-0 z-20">
                     <button onClick={() => setIsSidebarOpen(true)}>

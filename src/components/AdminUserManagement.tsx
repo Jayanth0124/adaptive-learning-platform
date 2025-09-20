@@ -32,7 +32,6 @@ const AdminUserManagement: React.FC<AdminUserManagementProps> = ({ users, onDele
   const [newUserData, setNewUserData] = useState({ name: '', username: '', password: '', role: 'student' as 'student' | 'teacher' });
   const [error, setError] = useState('');
 
-  // State for new features
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
@@ -190,34 +189,36 @@ const AdminUserManagement: React.FC<AdminUserManagementProps> = ({ users, onDele
           <p className="text-gray-600 mt-1">View, create, edit, and delete users.</p>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
             <StatCard title="Total Users" value={users.length} icon={Users} />
             <StatCard title="Students" value={studentCount} icon={UserCheck} />
             <StatCard title="Teachers" value={teacherCount} icon={Shield} />
         </div>
 
         <div className="bg-white rounded-lg shadow-sm border overflow-hidden">
-          <div className="p-4 flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
-             {selectedUsers.length > 0 ? (
-                <div className="flex items-center space-x-4">
-                    <span className="text-sm font-medium">{selectedUsers.length} selected</span>
-                    <button onClick={() => setIsDeleteModalOpen(true)} className="flex items-center text-red-600 text-sm font-medium">
-                        <Trash2 className="h-4 w-4 mr-1"/> Delete Selected
-                    </button>
-                </div>
-             ) : <div />}
-              <div className="flex items-center space-x-4">
-                   <div className="relative">
+          <div className="p-4 flex flex-col md:flex-row justify-between items-center gap-4">
+             <div className="w-full md:w-auto">
+                 {selectedUsers.length > 0 && (
+                    <div className="flex items-center space-x-4">
+                        <span className="text-sm font-medium">{selectedUsers.length} selected</span>
+                        <button onClick={() => setIsDeleteModalOpen(true)} className="flex items-center text-red-600 text-sm font-medium">
+                            <Trash2 className="h-4 w-4 mr-1"/> Delete Selected
+                        </button>
+                    </div>
+                 )}
+             </div>
+              <div className="flex flex-col sm:flex-row items-center gap-4 w-full md:w-auto">
+                   <div className="relative w-full sm:w-auto">
                       <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                      <input type="text" placeholder="Search users..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="pl-10 pr-4 py-2 border rounded-lg" />
+                      <input type="text" placeholder="Search users..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="pl-10 pr-4 py-2 border rounded-lg w-full" />
                   </div>
-                  <select value={roleFilter} onChange={e => setRoleFilter(e.target.value)} className="border rounded-lg py-2 px-3">
+                  <select value={roleFilter} onChange={e => setRoleFilter(e.target.value)} className="border rounded-lg py-2 px-3 w-full sm:w-auto">
                       <option value="all">All Roles</option>
                       <option value="student">Student</option>
                       <option value="teacher">Teacher</option>
                       <option value="admin">Admin</option>
                   </select>
-                  <button onClick={() => setIsCreateModalOpen(true)} className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center">
+                  <button onClick={() => setIsCreateModalOpen(true)} className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center w-full sm:w-auto justify-center">
                       <Plus className="h-5 w-5 mr-2" />Create User
                   </button>
               </div>
