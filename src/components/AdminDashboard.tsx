@@ -1,12 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { User, AdaptiveSettings } from '../types';
 import { LayoutDashboard, Users, Settings, Bell, Menu, X } from 'lucide-react';
 import AdminUserManagement from './AdminUserManagement';
 import AdminSettings from './AdminSettings';
 import AdminDashboardOverview from './AdminDashboardOverview';
 import NotificationManager from './NotificationManager';
-import { AuthService } from '../services/authService';
-import { QuizCompletion, PerformanceService } from '../services/performanceService';
+import { PerformanceService, QuizCompletion } from '../services/performanceService';
 import { collection, getCountFromServer } from 'firebase/firestore';
 import { db } from '../firebase';
 
@@ -23,27 +22,49 @@ interface AdminDashboardProps {
 const AdminDashboard: React.FC<AdminDashboardProps> = (props) => {
     const [activeView, setActiveView] = useState('overview');
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-    const [stats, setStats] = useState({ userCount: 0, studentCount: 0, questionCount: 0 });
-    const [recentUsers, setRecentUsers] = useState<User[]>([]);
-    const [recentCompletions, setRecentCompletions] = useState<QuizCompletion[]>([]);
+    const [stats, setStats] = useState({ studentCount: 0, teacherCount: 0, questionCount: 0 });
+    const [strugglingStudents, setStrugglingStudents] = useState<QuizCompletion[]>([]);
+
+    const dashboardData = useMemo(() => {
+        const signupData: { name: string, count: number }[] = [];
+        const today = new Date();
+        for (let i = 6; i >= 0; i--) {
+            const date = new Date(today);
+            date.setDate(today.getDate() - i);
+            const formattedDate = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+            signupData.push({ name: formattedDate, count: 0 });
+        }
+
+        props.users.forEach(user => {
+            if (user.createdAt) {
+                const signupDate = new Date(user.createdAt);
+                const diffDays = Math.floor((today.getTime() - signupDate.getTime()) / (1000 * 3600 * 24));
+                if (diffDays >= 0 && diffDays < 7) {
+                    const formattedDate = signupDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                    const dayData = signupData.find(d => d.name === formattedDate);
+                    if (dayData) {
+                        dayData.count++;
+                    }
+                }
+            }
+        });
+
+        return { signupData };
+    }, [props.users]);
 
     useEffect(() => {
         const fetchDashboardData = async () => {
-            const userColl = collection(db, "users");
             const questionColl = collection(db, "questions");
-            const userSnapshot = await getCountFromServer(userColl);
             const questionSnapshot = await getCountFromServer(questionColl);
             
             setStats({
-                userCount: userSnapshot.data().count,
                 studentCount: props.users.filter(u => u.role === 'student').length,
+                teacherCount: props.users.filter(u => u.role === 'teacher').length,
                 questionCount: questionSnapshot.data().count,
             });
 
-            const rUsers = await AuthService.getRecentUsers(5);
-            const rCompletions = await PerformanceService.getRecentCompletions();
-            setRecentUsers(rUsers);
-            setRecentCompletions(rCompletions);
+            const struggling = await PerformanceService.getStrugglingStudents(5);
+            setStrugglingStudents(struggling);
         };
 
         if (activeView === 'overview') {
@@ -97,7 +118,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = (props) => {
                     </h2>
                  </header>
                 <main className="flex-1 overflow-y-auto p-4 md:p-8">
-                    {activeView === 'overview' && <AdminDashboardOverview stats={stats} recentUsers={recentUsers} recentCompletions={recentCompletions} />}
+                    {activeView === 'overview' && <AdminDashboardOverview stats={stats} signupData={dashboardData.signupData} strugglingStudents={strugglingStudents} />}
                     {activeView === 'users' && <AdminUserManagement {...props} />}
                     {activeView === 'notifications' && <NotificationManager currentUser={props.currentUser} />}
                     {activeView === 'settings' && <AdminSettings settings={props.settings} onUpdateSettings={props.onUpdateSettings} />}

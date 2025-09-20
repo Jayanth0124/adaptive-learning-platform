@@ -55,3 +55,15 @@ export interface AuthState {
   isAuthenticated: boolean;
   user: User | null;
 }
+
+export interface Notification {
+    id: string;
+    title: string;
+    message: string;
+    authorName: string;
+    authorRole: 'admin' | 'teacher';
+    targetRole: 'all' | 'student' | 'teacher';
+    createdAt: Date;
+    isReadBy: string[];
+    totalUsersNotified: number;
+}

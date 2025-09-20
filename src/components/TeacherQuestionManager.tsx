@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Question } from '../types';
 import { db } from '../firebase';
 import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
-import { Plus, Edit, Trash2, Save, X } from 'lucide-react';
+import { Plus, Edit, Trash2, Save, X, Sparkles } from 'lucide-react';
+import { AIQuestionService } from '../services/aiQuestionService';
 
 // A reusable form for adding/editing questions
 const QuestionForm: React.FC<{
@@ -96,6 +97,14 @@ const TeacherQuestionManager: React.FC = () => {
     const [editingQuestion, setEditingQuestion] = useState<Question | null>(null);
     const questionsCollectionRef = collection(db, "questions");
 
+    // AI Form State
+    const [aiTopic, setAiTopic] = useState('');
+    const [aiNumQuestions, setAiNumQuestions] = useState(5);
+    const [aiDifficulty, setAiDifficulty] = useState<'easy' | 'medium' | 'hard'>('medium');
+    const [aiCategory, setAiCategory] = useState('');
+    const [isGenerating, setIsGenerating] = useState(false);
+    const [aiError, setAiError] = useState('');
+
     const fetchQuestions = async () => {
         const data = await getDocs(questionsCollectionRef);
         setQuestions(data.docs.map((doc) => ({ ...doc.data(), id: doc.id })) as Question[]);
@@ -104,6 +113,35 @@ const TeacherQuestionManager: React.FC = () => {
     useEffect(() => {
         fetchQuestions();
     }, []);
+    
+    const handleGenerateWithAI = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setIsGenerating(true);
+        setAiError('');
+
+        try {
+            const newQuestions = await AIQuestionService.generateQuestions(
+                aiTopic,
+                aiNumQuestions,
+                aiDifficulty,
+                aiCategory
+            );
+
+            for (const q of newQuestions) {
+                await addDoc(questionsCollectionRef, q);
+            }
+
+            await fetchQuestions(); // Refresh the list
+            setAiTopic('');
+            setAiCategory('');
+        } catch (error) {
+            setAiError('Failed to generate questions. Please check the API key and try again.');
+            console.error(error);
+        } finally {
+            setIsGenerating(false);
+        }
+    };
+
 
     const handleAddQuestion = async (newQuestion: Omit<Question, 'id'>) => {
         await addDoc(questionsCollectionRef, newQuestion);
@@ -139,6 +177,45 @@ const TeacherQuestionManager: React.FC = () => {
                 </button>
             </div>
             
+            {/* AI Generation Form */}
+            <div className="bg-white p-6 rounded-lg shadow-sm border mb-8">
+                <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center">
+                    <Sparkles className="h-5 w-5 mr-2 text-purple-500" />
+                    Generate Questions with AI
+                </h2>
+                <form onSubmit={handleGenerateWithAI} className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700">Topic</label>
+                            <input type="text" value={aiTopic} onChange={e => setAiTopic(e.target.value)} className="mt-1 w-full p-2 border rounded-md" required placeholder="e.g., Photosynthesis" />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700">Category</label>
+                            <input type="text" value={aiCategory} onChange={e => setAiCategory(e.target.value)} className="mt-1 w-full p-2 border rounded-md" required placeholder="e.g., Science" />
+                        </div>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700">Number of Questions</label>
+                            <input type="number" value={aiNumQuestions} onChange={e => setAiNumQuestions(Number(e.target.value))} className="mt-1 w-full p-2 border rounded-md" min="1" max="10" required />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700">Difficulty</label>
+                            <select value={aiDifficulty} onChange={e => setAiDifficulty(e.target.value as any)} className="mt-1 w-full p-2 border rounded-md">
+                                <option value="easy">Easy</option>
+                                <option value="medium">Medium</option>
+                                <option value="hard">Hard</option>
+                            </select>
+                        </div>
+                    </div>
+                    {aiError && <p className="text-sm text-red-600">{aiError}</p>}
+                    <button type="submit" disabled={isGenerating} className="bg-purple-600 text-white px-6 py-2 rounded-lg hover:bg-purple-700 disabled:bg-purple-400 flex items-center">
+                        {isGenerating ? 'Generating...' : 'Generate Questions'}
+                    </button>
+                </form>
+            </div>
+
+
             <div className="space-y-4">
                 {questions.map(q => (
                     <div key={q.id} className="bg-white p-4 rounded-lg shadow-sm border flex flex-col sm:flex-row justify-between sm:items-center">

@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { User } from '../types';
-import { Users, Shield, UserCheck, Trash2, Plus, X, Edit } from 'lucide-react';
+import { Users, Shield, UserCheck, Trash2, Plus, X, Edit, Search } from 'lucide-react';
 import ConfirmationModal from './ConfirmationModal';
 
 interface AdminUserManagementProps {
@@ -10,6 +10,20 @@ interface AdminUserManagementProps {
   onUpdateUserRole: (userId: string, newRole: 'student' | 'teacher') => Promise<void>;
 }
 
+const StatCard: React.FC<{ title: string; value: number; icon: React.ElementType }> = ({ title, value, icon: Icon }) => (
+    <div className="bg-white p-4 rounded-lg shadow-sm border">
+        <div className="flex items-center">
+            <div className="bg-blue-100 p-3 rounded-full mr-4">
+                <Icon className="h-6 w-6 text-blue-600" />
+            </div>
+            <div>
+                <p className="text-sm font-medium text-gray-600">{title}</p>
+                <p className="text-2xl font-bold text-gray-900">{value}</p>
+            </div>
+        </div>
+    </div>
+);
+
 const AdminUserManagement: React.FC<AdminUserManagementProps> = ({ users, onDeleteUser, onCreateUser, onUpdateUserRole }) => {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -17,6 +31,36 @@ const AdminUserManagement: React.FC<AdminUserManagementProps> = ({ users, onDele
   const [userToProcess, setUserToProcess] = useState<User | null>(null);
   const [newUserData, setNewUserData] = useState({ name: '', username: '', password: '', role: 'student' as 'student' | 'teacher' });
   const [error, setError] = useState('');
+
+  // State for new features
+  const [searchTerm, setSearchTerm] = useState('');
+  const [roleFilter, setRoleFilter] = useState('all');
+  const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
+
+  const filteredUsers = useMemo(() => {
+    return users
+      .filter(user => {
+        const matchesRole = roleFilter === 'all' || user.role === roleFilter;
+        const matchesSearch = user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                              user.username.toLowerCase().includes(searchTerm.toLowerCase());
+        return matchesRole && matchesSearch;
+      })
+      .sort((a, b) => new Date(b.createdAt!).getTime() - new Date(a.createdAt!).getTime());
+  }, [users, searchTerm, roleFilter]);
+
+  const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.checked) {
+      setSelectedUsers(filteredUsers.filter(u => u.role !== 'admin').map(u => u.id));
+    } else {
+      setSelectedUsers([]);
+    }
+  };
+
+  const handleSelectUser = (userId: string) => {
+    setSelectedUsers(prev =>
+      prev.includes(userId) ? prev.filter(id => id !== userId) : [...prev, userId]
+    );
+  };
 
   const openDeleteModal = (user: User) => {
     setUserToProcess(user);
@@ -26,11 +70,14 @@ const AdminUserManagement: React.FC<AdminUserManagementProps> = ({ users, onDele
   const confirmDelete = () => {
     if (userToProcess) {
       onDeleteUser(userToProcess.id);
-      setIsDeleteModalOpen(false);
-      setUserToProcess(null);
+    } else if (selectedUsers.length > 0) {
+      selectedUsers.forEach(id => onDeleteUser(id));
+      setSelectedUsers([]);
     }
+    setIsDeleteModalOpen(false);
+    setUserToProcess(null);
   };
-  
+
   const openEditModal = (user: User) => {
     setUserToProcess(user);
     setIsEditModalOpen(true);
@@ -57,12 +104,15 @@ const AdminUserManagement: React.FC<AdminUserManagementProps> = ({ users, onDele
       }
   };
 
+  const studentCount = users.filter(u => u.role === 'student').length;
+  const teacherCount = users.filter(u => u.role === 'teacher').length;
+
   return (
     <>
       <ConfirmationModal
         isOpen={isDeleteModalOpen}
-        title="Delete User"
-        message={`Are you sure you want to delete the user "${userToProcess?.name}"? This action cannot be undone.`}
+        title={userToProcess ? "Delete User" : "Delete Selected Users"}
+        message={userToProcess ? `Are you sure you want to delete "${userToProcess.name}"? This cannot be undone.` : `Are you sure you want to delete these ${selectedUsers.length} users? This cannot be undone.`}
         onConfirm={confirmDelete}
         onCancel={() => setIsDeleteModalOpen(false)}
       />
@@ -76,7 +126,28 @@ const AdminUserManagement: React.FC<AdminUserManagementProps> = ({ users, onDele
                         <h2 className="text-xl font-bold text-gray-900">Create New User</h2>
                         <button type="button" onClick={() => setIsCreateModalOpen(false)} className="p-1 rounded-full hover:bg-gray-200"><X className="h-5 w-5 text-gray-500" /></button>
                     </div>
-                    {/* Form fields... */}
+                     <div className="space-y-4">
+                        {error && <p className="text-sm text-red-600 bg-red-50 p-3 rounded-md">{error}</p>}
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700">Full Name</label>
+                            <input type="text" required value={newUserData.name} onChange={e => setNewUserData({...newUserData, name: e.target.value})} className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md" />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700">Username</label>
+                            <input type="text" required value={newUserData.username} onChange={e => setNewUserData({...newUserData, username: e.target.value})} className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md" />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700">Password</label>
+                            <input type="password" required value={newUserData.password} onChange={e => setNewUserData({...newUserData, password: e.target.value})} className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md" />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700">Role</label>
+                            <select value={newUserData.role} onChange={e => setNewUserData({...newUserData, role: e.target.value as 'student' | 'teacher'})} className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md">
+                                <option value="student">Student</option>
+                                <option value="teacher">Teacher</option>
+                            </select>
+                        </div>
+                    </div>
                 </div>
                 <div className="bg-gray-50 px-6 py-3 flex justify-end space-x-3">
                     <button type="button" onClick={() => setIsCreateModalOpen(false)} className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50">Cancel</button>
@@ -98,7 +169,7 @@ const AdminUserManagement: React.FC<AdminUserManagementProps> = ({ users, onDele
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-gray-700">Role</label>
-                        <select value={userToProcess.role} onChange={e => setUserToProcess({...userToProcess, role: e.target.value as 'student' | 'teacher'})} className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <select value={userToProcess.role} onChange={e => setUserToProcess({...userToProcess, role: e.target.value as 'student' | 'teacher'})} className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md">
                             <option value="student">Student</option>
                             <option value="teacher">Teacher</option>
                         </select>
@@ -114,29 +185,60 @@ const AdminUserManagement: React.FC<AdminUserManagementProps> = ({ users, onDele
       )}
 
       <div>
-        <div className="flex justify-between items-center mb-6">
-            <div>
-                <h1 className="text-3xl font-bold text-gray-900">User Management</h1>
-                <p className="text-gray-600 mt-1">View, create, edit, and delete users.</p>
-            </div>
-            <button onClick={() => setIsCreateModalOpen(true)} className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center">
-                <Plus className="h-5 w-5 mr-2" />Create User
-            </button>
+        <div className="mb-6">
+          <h1 className="text-3xl font-bold text-gray-900">User Management</h1>
+          <p className="text-gray-600 mt-1">View, create, edit, and delete users.</p>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+            <StatCard title="Total Users" value={users.length} icon={Users} />
+            <StatCard title="Students" value={studentCount} icon={UserCheck} />
+            <StatCard title="Teachers" value={teacherCount} icon={Shield} />
         </div>
 
         <div className="bg-white rounded-lg shadow-sm border overflow-hidden">
+          <div className="p-4 flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
+             {selectedUsers.length > 0 ? (
+                <div className="flex items-center space-x-4">
+                    <span className="text-sm font-medium">{selectedUsers.length} selected</span>
+                    <button onClick={() => setIsDeleteModalOpen(true)} className="flex items-center text-red-600 text-sm font-medium">
+                        <Trash2 className="h-4 w-4 mr-1"/> Delete Selected
+                    </button>
+                </div>
+             ) : <div />}
+              <div className="flex items-center space-x-4">
+                   <div className="relative">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                      <input type="text" placeholder="Search users..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="pl-10 pr-4 py-2 border rounded-lg" />
+                  </div>
+                  <select value={roleFilter} onChange={e => setRoleFilter(e.target.value)} className="border rounded-lg py-2 px-3">
+                      <option value="all">All Roles</option>
+                      <option value="student">Student</option>
+                      <option value="teacher">Teacher</option>
+                      <option value="admin">Admin</option>
+                  </select>
+                  <button onClick={() => setIsCreateModalOpen(true)} className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center">
+                      <Plus className="h-5 w-5 mr-2" />Create User
+                  </button>
+              </div>
+          </div>
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
+                  <th className="px-6 py-3 w-4"><input type="checkbox" onChange={handleSelectAll} checked={selectedUsers.length > 0 && selectedUsers.length === filteredUsers.filter(u => u.role !== 'admin').length} /></th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Role</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date Created</th>
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {users.map((user) => (
-                  <tr key={user.id} className="hover:bg-gray-50">
+                {filteredUsers.map((user) => (
+                  <tr key={user.id} className={`hover:bg-gray-50 ${selectedUsers.includes(user.id) ? 'bg-blue-50' : ''}`}>
+                    <td className="px-6 py-4">
+                      {user.role !== 'admin' && <input type="checkbox" checked={selectedUsers.includes(user.id)} onChange={() => handleSelectUser(user.id)}/>}
+                    </td>
                     <td className="px-6 py-4">
                       <div className="text-sm font-medium text-gray-900">{user.name}</div>
                       <div className="text-xs text-gray-500">{user.username}</div>
@@ -150,6 +252,7 @@ const AdminUserManagement: React.FC<AdminUserManagementProps> = ({ users, onDele
                         {user.role}
                       </span>
                     </td>
+                     <td className="px-6 py-4 text-sm text-gray-700">{user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A'}</td>
                     <td className="px-6 py-4 text-right text-sm font-medium">
                       {user.role !== 'admin' && (
                           <div className="flex justify-end items-center space-x-4">

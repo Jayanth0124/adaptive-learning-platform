@@ -15,6 +15,7 @@ import Dashboard from './components/Dashboard';
 import AdminDashboard from './components/AdminDashboard';
 import StudentHome from './components/StudentHome';
 import TeacherDashboard from './components/TeacherDashboard';
+import StudentDetailModal from './components/StudentDetailModal'; // Ensure this is imported if used directly here, though it's likely in a sub-component
 
 const getInitialView = (auth: AuthState): string => {
     if (auth.isAuthenticated) {
@@ -36,6 +37,7 @@ function App() {
   const [users, setUsers] = useState<User[]>([]);
   const [allStudentPerformances, setAllStudentPerformances] = useState<(StudentPerformance & { studentName: string })[]>([]);
   const [unreadNotifications, setUnreadNotifications] = useState<Notification[]>([]);
+  const [isQuizLoading, setIsQuizLoading] = useState(false); // To show a loading state
 
   const adaptiveEngine = new AdaptiveEngine();
 
@@ -47,7 +49,7 @@ function App() {
         if (authState.isAuthenticated && authState.user) {
             const usersData = await AuthService.getUsers();
             setUsers(usersData);
-            const unread = await NotificationService.getUnreadNotifications(authState.user.id);
+            const unread = await NotificationService.getUnreadNotifications(authState.user);
             setUnreadNotifications(unread);
 
             if (AuthService.isAdmin(authState) || AuthService.isTeacher(authState)) {
@@ -76,8 +78,23 @@ function App() {
   useEffect(() => {
     const generateQuizForView = async () => {
         if (currentView === 'quiz' && performance && settings) {
-            const quizQuestions = await QuizService.generateQuizQuestions(performance, settings);
+            setIsQuizLoading(true);
+            setCurrentQuiz([]); // Clear previous quiz
+            
+            let quizQuestions: Question[];
+            
+            // If the student has answered enough questions, use the new AI generation
+            if (performance.totalQuestions >= settings.minQuestionsBeforeAdaptation) {
+                console.log("Generating adaptive quiz with AI...");
+                quizQuestions = await QuizService.generateAdaptiveQuizWithAI(performance, settings);
+            } else {
+                // Otherwise, give them a standard quiz from the database
+                console.log("Generating initial standard quiz...");
+                quizQuestions = await QuizService.generateInitialQuiz(settings);
+            }
+            
             setCurrentQuiz(quizQuestions);
+            setIsQuizLoading(false);
         }
     };
     generateQuizForView();
@@ -198,15 +215,18 @@ function App() {
                     currentView={currentView}
                   />
                 )}
-                {isStudent && currentView === 'home' && (
+                {isStudent && currentView === 'home' && authState.user && (
                   <StudentHome 
                     onStartQuiz={() => handleViewChange('quiz')}
                     onViewDashboard={() => handleViewChange('dashboard')}
                     performance={performance}
+                    currentUser={authState.user}
                   />
                 )}
-                {isStudent && currentView === 'quiz' && performance && (
-                  <QuizInterface questions={currentQuiz} onQuizComplete={handleQuizComplete} performance={performance} />
+                {isStudent && currentView === 'quiz' && (
+                  isQuizLoading 
+                    ? <div className="text-center p-10">Generating your personalized quiz...</div>
+                    : <QuizInterface questions={currentQuiz} onQuizComplete={handleQuizComplete} performance={performance!} />
                 )}
                 {isStudent && currentView === 'dashboard' && performance && (
                   <Dashboard performance={performance} studentFitScore={studentFitScore} />

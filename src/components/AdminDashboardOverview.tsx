@@ -1,12 +1,12 @@
 import React from 'react';
-import { User } from '../types';
+import { Users, UserPlus, BookCopy, AlertTriangle } from 'lucide-react';
 import { QuizCompletion } from '../services/performanceService';
-import { Users, UserPlus, BookCopy, CheckSquare } from 'lucide-react';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 
 interface AdminDashboardOverviewProps {
-    stats: { userCount: number; studentCount: number; questionCount: number };
-    recentUsers: User[];
-    recentCompletions: QuizCompletion[];
+    stats: { studentCount: number; teacherCount: number; questionCount: number };
+    signupData: { name: string, count: number }[];
+    strugglingStudents: QuizCompletion[];
 }
 
 const StatCard: React.FC<{ icon: React.ElementType, title: string, value: number, color: string }> = ({ icon: Icon, title, value, color }) => (
@@ -21,45 +21,67 @@ const StatCard: React.FC<{ icon: React.ElementType, title: string, value: number
     </div>
 );
 
-const AdminDashboardOverview: React.FC<AdminDashboardOverviewProps> = ({ stats, recentUsers, recentCompletions }) => {
+const AdminDashboardOverview: React.FC<AdminDashboardOverviewProps> = ({ stats, signupData, strugglingStudents }) => {
+    const roleData = [
+        { name: 'Students', value: stats.studentCount },
+        { name: 'Teachers', value: stats.teacherCount },
+    ];
+    const COLORS = ['#3B82F6', '#8B5CF6'];
+
     return (
         <div>
             <h1 className="text-3xl font-bold text-gray-900 mb-6">Dashboard Overview</h1>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                <StatCard icon={Users} title="Total Users" value={stats.userCount} color="blue" />
-                <StatCard icon={UserPlus} title="Student Accounts" value={stats.studentCount} color="green" />
-                <StatCard icon={BookCopy} title="Total Questions" value={stats.questionCount} color="purple" />
+                <StatCard icon={Users} title="Total Students" value={stats.studentCount} color="blue" />
+                <StatCard icon={UserPlus} title="Total Teachers" value={stats.teacherCount} color="purple" />
+                <StatCard icon={BookCopy} title="Total Questions" value={stats.questionCount} color="green" />
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <div className="bg-white p-6 rounded-lg shadow-sm border">
-                    <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center"><UserPlus className="h-5 w-5 mr-2 text-gray-500" />Recent Signups</h2>
-                    <ul className="divide-y divide-gray-200">
-                        {recentUsers.map(user => (
-                            <li key={user.id} className="py-3 flex justify-between items-center">
-                                <div>
-                                    <p className="text-sm font-medium text-gray-900">{user.name}</p>
-                                    <p className="text-xs text-gray-500">{user.username}</p>
-                                </div>
-                                <span className="text-xs text-gray-500">{new Date(user.createdAt!).toLocaleDateString()}</span>
-                            </li>
-                        ))}
-                    </ul>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+                <div className="lg:col-span-2 bg-white p-6 rounded-lg shadow-sm border">
+                    <h2 className="text-lg font-semibold text-gray-800 mb-4">New User Signups (Last 7 Days)</h2>
+                    <ResponsiveContainer width="100%" height={300}>
+                        <LineChart data={signupData}>
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <XAxis dataKey="name" />
+                            <YAxis allowDecimals={false} />
+                            <Tooltip />
+                            <Line type="monotone" dataKey="count" stroke="#3B82F6" strokeWidth={2} name="New Users" />
+                        </LineChart>
+                    </ResponsiveContainer>
                 </div>
                 <div className="bg-white p-6 rounded-lg shadow-sm border">
-                    <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center"><CheckSquare className="h-5 w-5 mr-2 text-gray-500"/>Recent Quiz Completions</h2>
-                     <ul className="divide-y divide-gray-200">
-                        {recentCompletions.map(comp => (
-                            <li key={comp.id} className="py-3 flex justify-between items-center">
-                                <div>
-                                    <p className="text-sm font-medium text-gray-900">{comp.studentName}</p>
-                                    <p className="text-xs text-gray-500">{comp.totalQuestions} Questions</p>
-                                </div>
-                                <span className="text-sm font-semibold">{comp.score.toFixed(1)}%</span>
-                            </li>
-                        ))}
-                    </ul>
+                    <h2 className="text-lg font-semibold text-gray-800 mb-4">User Role Distribution</h2>
+                     <ResponsiveContainer width="100%" height={300}>
+                        <PieChart>
+                            <Pie data={roleData} cx="50%" cy="50%" labelLine={false} outerRadius={80} fill="#8884d8" dataKey="value" nameKey="name" label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}>
+                                {roleData.map((entry, index) => (
+                                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                ))}
+                            </Pie>
+                             <Tooltip />
+                        </PieChart>
+                    </ResponsiveContainer>
                 </div>
+            </div>
+
+             <div className="bg-white p-6 rounded-lg shadow-sm border">
+                <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                    <AlertTriangle className="h-5 w-5 mr-2 text-yellow-500" />
+                    Needs Attention (Lowest Scores)
+                </h2>
+                <ul className="divide-y divide-gray-200">
+                    {strugglingStudents.map(student => (
+                        <li key={student.id} className="py-3 flex justify-between items-center">
+                            <div>
+                                <p className="text-sm font-medium text-gray-900">{student.studentName}</p>
+                                <p className="text-xs text-gray-500">Completed on {new Date(student.completedAt).toLocaleDateString()}</p>
+                            </div>
+                            <span className="text-sm font-semibold text-red-600">{student.score.toFixed(1)}%</span>
+                        </li>
+                    ))}
+                    {strugglingStudents.length === 0 && <p className="text-sm text-gray-500 text-center py-4">No struggling students found. Great job!</p>}
+                </ul>
             </div>
         </div>
     );

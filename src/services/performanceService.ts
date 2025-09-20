@@ -52,6 +52,13 @@ export class PerformanceService {
       const snapshot = await getDocs(q);
       return snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id })) as QuizCompletion[];
   }
+  
+  static async getStrugglingStudents(count: number): Promise<QuizCompletion[]> {
+      const q = query(this.completionsCollectionRef, orderBy('score', 'asc'), limit(count));
+      const snapshot = await getDocs(q);
+      return snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id })) as QuizCompletion[];
+  }
+
 
   static async getAllStudentPerformances(users: User[]): Promise<(StudentPerformance & { studentName: string })[]> {
     const allPerformances: (StudentPerformance & { studentName: string })[] = [];
